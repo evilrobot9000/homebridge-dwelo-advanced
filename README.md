@@ -111,4 +111,4 @@ npm install
   npm run lint \-- \--fix
 
 * **Run a test Homebridge instance**  
-  homebridge \-D \-U ./temp-homebridge  
+  homebridge \-D \-U ./temp-homebridge
