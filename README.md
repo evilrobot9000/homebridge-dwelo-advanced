@@ -3,10 +3,11 @@
 A Homebridge platform plugin for Dwelo (now Ambient) smart home systems.  
 This plugin provides native HomeKit support for supported Dwelo thermostats and dimmer switches. It is built on the modern Homebridge plugin template using TypeScript.  
 This project is not affiliated with Dwelo, LLC or Ambient.  
-\[\!WARNING\]  
-Beta Software: Under Development  
-This plugin is in active development. It has been built based on reverse-engineered API calls from a specific set of devices. Not all features may function as expected, and it may not support all hardware variations found in different Dwelo-equipped properties.  
-Please use at your own risk and consider contributing any findings by [opening an issue](https://www.google.com/search?q=https://github.com/YourUsername/homebridge-dwelo-advanced/issues) on GitHub.
+
+> [!WARNING]  
+> Beta Software: Under Development  
+>This plugin is in active development. It has been built based on reverse-engineered API calls from a specific set of devices. Not all features may function as expected, and it may not support all hardware variations found in different Dwelo-equipped properties.  
+>Please use at your own risk and consider contributing any findings by [opening an issue](https://www.google.com/search?q=https://github.com/YourUsername/homebridge-dwelo-advanced/issues) on GitHub.
 
 ## **Features**
 
