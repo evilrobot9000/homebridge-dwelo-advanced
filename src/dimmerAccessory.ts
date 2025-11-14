@@ -40,12 +40,13 @@ export class DweloDimmerAccessory {
       await this.platform.axios.post(`/device/${deviceId}/command/`, commandPayload);
       this.platform.log.info(`Successfully sent command for ${this.accessory.displayName}.`);
     } catch (error: unknown) { // Explicitly type error as 'unknown'
-      // --- FIX ---
-      // Simplified, type-safe error handling
+      // New type-safe error handling
       if (error instanceof Error) {
         this.platform.log.error(`API Error for ${this.accessory.displayName}:`, error.message);
         // Check if it's an axios-like error by checking for the 'response' property
         if (error && typeof error === 'object' && 'response' in error && error.response) {
+          // --- FIX: Add linter disable comment ---
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           this.platform.log.error('API Response Data:', (error as any).response.data);
         }
       } else {

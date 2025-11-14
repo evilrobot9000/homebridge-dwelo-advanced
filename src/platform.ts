@@ -1,8 +1,7 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
 import axios from 'axios';
-// We don't need to import AxiosInstance if it's causing errors.
-// We can infer the type directly from the `create` function.
+// We do NOT import AxiosInstance, as it's not exported
 import { DweloDimmerAccessory } from './dimmerAccessory.js';
 import { DweloThermostatAccessory } from './thermostatAccessory.js';
 
@@ -17,8 +16,8 @@ export class DweloPlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
-  // --- FIX ---
-  // Infer the type from the create function itself. This is more robust.
+  // --- FIX #1: Infer the type from the 'axios.create' function ---
+  // This avoids the "AxiosInstance" import error
   public readonly axios: ReturnType<typeof axios.create>;
 
   constructor(
@@ -111,13 +110,13 @@ export class DweloPlatform implements DynamicPlatformPlugin {
         }
       }
 
-    } catch (error: unknown) { // Explicitly type error as 'unknown'
-      // --- FIX ---
-      // Simplified, type-safe error handling
+    } catch (error: unknown) { // --- FIX #2: Type-safe error handling ---
       if (error instanceof Error) {
         this.log.error('API Error:', error.message);
         // Check if it's an axios-like error by checking for the 'response' property
         if (error && typeof error === 'object' && 'response' in error && error.response) {
+          // --- FIX #3: Linter-disable comment ---
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           this.log.error('API Response Data:', (error as any).response.data);
         }
       } else {
