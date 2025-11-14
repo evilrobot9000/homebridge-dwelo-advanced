@@ -27,12 +27,12 @@ This project is not affiliated with Dwelo, LLC or Ambient.
 ## **Configuration**
 
 Add the platform to your config.json file. The easiest way to do this is using the Homebridge UI.  
-{  
-  "platform": "DweloAdvanced",  
-  "name": "DweloAdvanced",  
-  "token": "YOUR\_API\_TOKEN\_HERE",  
-  "gatewayId": "YOUR\_GATEWAY\_ID\_HERE"  
-}
+```
+"platform": "DweloAdvanced",  
+"name": "DweloAdvanced",  
+"token": "YOUR\_API\_TOKEN\_HERE",  
+"gatewayId": "YOUR\_GATEWAY\_ID\_HERE"  
+```
 
 ### **Configuration Fields**
 
@@ -73,13 +73,11 @@ This method is based on the original work by [leolll/dwelo-lights](https://githu
 4. In the new pane, click the **"Response"** or **"Preview"** tab.  
 5. You will see a small bit of JSON data. Find the id field.  
 6. The value (starting with gwy\_...) is your **gatewayId**.  
-   \[  
-     {  
-       "id": "gwy\_a1b2c3d4e5f67890",  
-       "communityId": "...",  
-       "unitId": "..."  
-     }  
-   \]
+```
+"id": "gwy\_a1b2c3d4e5f67890",  
+"communityId": "...",  
+"unitId": "..."  
+```
 
 You now have both values needed for the plugin configuration\!
 
@@ -89,26 +87,28 @@ This plugin is built with TypeScript and uses the official Homebridge plugin tem
 
 ### **Get Started**
 
-\# Clone your repository  
-git clone \[https://github.com/YourUsername/homebridge-dwelo-advanced.git\](https://github.com/YourUsername/homebridge-dwelo-advanced.git)  
+```
+# Clone your repository  
+git clone https://github.com/evilrobot9000/homebridge-dwelo-advanced.git
 cd homebridge-dwelo-advanced
 
-\# Install dependencies  
+# Install dependencies  
 npm install
+```
 
 ### **Available Scripts**
 
 * **Install dependencies**  
-  npm install
+```npm install```
 
 * **Run the build command (compiles TS to JS)**  
-  npm run build
+```npm run build```
 
 * **Run the lint command (checks for style errors)**  
-  npm run lint
+```npm run lint```
 
 * **Run the fix command (auto-fixes style errors)**  
-  npm run lint \-- \--fix
+```npm run lint \-- \--fix```
 
 * **Run a test Homebridge instance**  
-  homebridge \-D \-U ./temp-homebridge
+```homebridge \-D \-U ./temp-homebridge```
