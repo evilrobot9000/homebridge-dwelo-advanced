@@ -5,13 +5,18 @@
   "strictValidation": false,
   "schema": {
     "type": "object",
-    "required": ["name"],
-    "additionalProperties": false,
     "properties": {
-      "name": {
-        "title": "Name",
+      "token": {
+        "title": "API Token",
         "type": "string",
-        "default": "Example Dynamic Platform"
+        "required": true,
+        "description": "Your Dwelo/Ambient API Authorization Token."
+      },
+      "gatewayId": {
+        "title": "Gateway ID",
+        "type": "string",
+        "required": true,
+        "description": "Your Dwelo/Ambient Gateway ID."
       }
     }
   }

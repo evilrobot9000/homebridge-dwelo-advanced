@@ -1,149 +1,127 @@
-import type { API, Characteristic, DynamicPlatformPlugin, Logging, PlatformAccessory, PlatformConfig, Service } from 'homebridge';
-
-import { ExamplePlatformAccessory } from './platformAccessory.js';
+import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
-
-// This is only required when using Custom Services and Characteristics not support by HomeKit
-import { EveHomeKitTypes } from 'homebridge-lib/EveHomeKitTypes';
+import axios from 'axios';
+// We don't need to import AxiosInstance if it's causing errors.
+// We can infer the type directly from the `create` function.
+import { DweloDimmerAccessory } from './dimmerAccessory.js';
+import { DweloThermostatAccessory } from './thermostatAccessory.js';
 
 /**
  * HomebridgePlatform
- * This class is the main constructor for your plugin, this is where you should
- * parse the user config and discover/register accessories with Homebridge.
+ * This class is the main entry point of your plugin.
  */
-export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
+export class DweloPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service;
   public readonly Characteristic: typeof Characteristic;
 
   // this is used to track restored cached accessories
-  public readonly accessories: Map<string, PlatformAccessory> = new Map();
-  public readonly discoveredCacheUUIDs: string[] = [];
+  public readonly accessories: PlatformAccessory[] = [];
 
-  // This is only required when using Custom Services and Characteristics not support by HomeKit
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public readonly CustomServices: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public readonly CustomCharacteristics: any;
+  // --- FIX ---
+  // Infer the type from the create function itself. This is more robust.
+  public readonly axios: ReturnType<typeof axios.create>;
 
   constructor(
-    public readonly log: Logging,
+    public readonly log: Logger,
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.Service = api.hap.Service;
-    this.Characteristic = api.hap.Characteristic;
+    this.log.info('Finished initializing platform:', this.config.name);
 
-    // This is only required when using Custom Services and Characteristics not support by HomeKit
-    this.CustomServices = new EveHomeKitTypes(this.api).Services;
-    this.CustomCharacteristics = new EveHomeKitTypes(this.api).Characteristics;
+    this.Service = this.api.hap.Service;
+    this.Characteristic = this.api.hap.Characteristic;
 
-    this.log.debug('Finished initializing platform:', this.config.name);
+    // --- OUR DWELO API SETUP ---
+    this.axios = axios.create({
+      baseURL: 'https://api.dwelo.com/v3',
+      headers: {
+        'Authorization': `Bearer ${this.config.token}`,
+      },
+    });
 
-    // When this event is fired it means Homebridge has restored all cached accessories from disk.
-    // Dynamic Platform plugins should only register new accessories after this event was fired,
-    // in order to ensure they weren't added to homebridge already. This event can also be used
-    // to start discovery of new accessories.
     this.api.on('didFinishLaunching', () => {
-      log.debug('Executed didFinishLaunching callback');
-      // run the method to discover / register your devices as accessories
+      log.info('Executed didFinishLaunching callback');
       this.discoverDevices();
     });
   }
 
   /**
    * This function is invoked when homebridge restores cached accessories from disk at startup.
-   * It should be used to set up event handlers for characteristics and update respective values.
    */
   configureAccessory(accessory: PlatformAccessory) {
     this.log.info('Loading accessory from cache:', accessory.displayName);
-
-    // add the restored accessory to the accessories cache, so we can track if it has already been registered
-    this.accessories.set(accessory.UUID, accessory);
+    this.accessories.push(accessory);
   }
 
   /**
-   * This is an example method showing how to register discovered accessories.
-   * Accessories must only be registered once, previously created accessories
-   * must not be registered again to prevent "duplicate UUID" errors.
+   * Our main device discovery logic.
    */
-  discoverDevices() {
-    // EXAMPLE ONLY
-    // A real plugin you would discover accessories from the local network, cloud services
-    // or a user-defined array in the platform config.
-    const exampleDevices = [
-      {
-        exampleUniqueId: 'ABCD',
-        exampleDisplayName: 'Bedroom',
-      },
-      {
-        exampleUniqueId: 'EFGH',
-        exampleDisplayName: 'Kitchen',
-      },
-      {
-        // This is an example of a device which uses a Custom Service
-        exampleUniqueId: 'IJKL',
-        exampleDisplayName: 'Backyard',
-        CustomService: 'AirPressureSensor',
-      },
-    ];
+  async discoverDevices() {
+    this.log.info('Discovering Dwelo devices...');
 
-    // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of exampleDevices) {
-      // generate a unique id for the accessory this should be generated from
-      // something globally unique, but constant, for example, the device serial
-      // number or MAC address
-      const uuid = this.api.hap.uuid.generate(device.exampleUniqueId);
-
-      // see if an accessory with the same uuid has already been registered and restored from
-      // the cached devices we stored in the `configureAccessory` method above
-      const existingAccessory = this.accessories.get(uuid);
-
-      if (existingAccessory) {
-        // the accessory already exists
-        this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-
-        // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. e.g.:
-        // existingAccessory.context.device = device;
-        // this.api.updatePlatformAccessories([existingAccessory]);
-
-        // create the accessory handler for the restored accessory
-        // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, existingAccessory);
-
-        // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, e.g.:
-        // remove platform accessories when no longer present
-        // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
-        // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
-      } else {
-        // the accessory does not yet exist, so we need to create it
-        this.log.info('Adding new accessory:', device.exampleDisplayName);
-
-        // create a new accessory
-        const accessory = new this.api.platformAccessory(device.exampleDisplayName, uuid);
-
-        // store a copy of the device object in the `accessory.context`
-        // the `context` property can be used to store any data about the accessory you may need
-        accessory.context.device = device;
-
-        // create the accessory handler for the newly create accessory
-        // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, accessory);
-
-        // link the accessory to your platform
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-      }
-
-      // push into discoveredCacheUUIDs
-      this.discoveredCacheUUIDs.push(uuid);
+    if (!this.config.gatewayId || !this.config.token) {
+      this.log.error('Gateway ID or API Token is missing from config. Please check your plugin settings.');
+      return;
     }
 
-    // you can also deal with accessories from the cache which are no longer present by removing them from Homebridge
-    // for example, if your plugin logs into a cloud account to retrieve a device list, and a user has previously removed a device
-    // from this cloud account, then this device will no longer be present in the device list but will still be in the Homebridge cache
-    for (const [uuid, accessory] of this.accessories) {
-      if (!this.discoveredCacheUUIDs.includes(uuid)) {
-        this.log.info('Removing existing accessory from cache:', accessory.displayName);
-        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+    try {
+      // Fetch all devices associated with the gateway
+      const response = await this.axios.get(`/gateways/${this.config.gatewayId}/devices`);
+      const devices = response.data;
+
+      if (!Array.isArray(devices)) {
+        this.log.error('Failed to get a valid device list from Dwelo API.');
+        return;
+      }
+
+      // Loop over all devices and register them
+      for (const device of devices) {
+        // Generate a unique UUID for each accessory
+        const uuid = this.api.hap.uuid.generate(device.id);
+        const existingAccessory = this.accessories.find(acc => acc.UUID === uuid);
+
+        if (existingAccessory) {
+          // The accessory already exists, we just need to re-initialize it
+          this.log.info('Restoring existing accessory:', device.name);
+          
+          if (device.type === 'dimmer') {
+            new DweloDimmerAccessory(this, existingAccessory);
+          } else if (device.type === 'thermostat') {
+            new DweloThermostatAccessory(this, existingAccessory);
+          } else {
+            this.log.info(`Unsupported device type ${device.type}. Removing from cache if it exists.`);
+            this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
+          }
+
+        } else {
+          // The accessory does not exist, so we create it
+          this.log.info('Registering new accessory:', device.name);
+          const accessory = new this.api.platformAccessory(device.name, uuid);
+          accessory.context.device = device; 
+
+          if (device.type === 'dimmer') {
+            new DweloDimmerAccessory(this, accessory);
+            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+          } else if (device.type === 'thermostat') {
+            new DweloThermostatAccessory(this, accessory);
+            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+          } else {
+            this.log.info(`Skipping unsupported device: ${device.name} (type: ${device.type})`);
+          }
+        }
+      }
+
+    } catch (error: unknown) { // Explicitly type error as 'unknown'
+      // --- FIX ---
+      // Simplified, type-safe error handling
+      if (error instanceof Error) {
+        this.log.error('API Error:', error.message);
+        // Check if it's an axios-like error by checking for the 'response' property
+        if (error && typeof error === 'object' && 'response' in error && error.response) {
+          this.log.error('API Response Data:', (error as any).response.data);
+        }
+      } else {
+        this.log.error('An unknown error occurred:', error);
       }
     }
   }
